@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: project-pvc
+spec:
+  volumeName: project-pv # pv to bind to
+  storageClassName: manual # pvc is bound to pv using this value but we can explisitly define pv using selector or volumeName
+  accessModes:
+    - ReadWriteOnce # can be different from PV
+  resources:
+    requests:
+      storage: 2Mi # This is a minimal storage size to request. it can't be lesser than PV storage size

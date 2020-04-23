@@ -1,0 +1,14 @@
+# This configuration can be created with
+# kubectl create configmap variables --from-env-file=.env
+
+# config Map httpd.conf
+# kubectl create configmap httpd-conf --from-file=images\apache\conf\httpd.conf
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: variables
+    namespace: default
+data:
+  DOCUMENTROOT: /var/www/html
+  PHPSERVER: phpserver
+  XDEBUG_CONFIG: '"idekey=PHPSTORM remote_enable=1 remote_connect_back=1"'

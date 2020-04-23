@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: php-fpm-deployment # deployment name
+    labels:
+        app.kubernetes.io/name: php-fpm
+        app: php-fpm
+spec:
+    replicas: 1
+    selector:
+        matchLabels: # select Pod by label
+            app: php-fpm-pod-label
+    template: # Pod definition
+        metadata:
+            name: php-fpm-pod # Pod name
+            labels:
+                app: php-fpm-pod-label
+        spec:
+            volumes:
+                - name: project-volume
+                  persistentVolumeClaim:
+                      claimName: project-pvc
+                - name: php-fpm-config # configMap
+                  configMap:
+                    name: php-fpm-conf
+                    defaultMode: 0644
+                - name: php-ini-config # configMap
+                  configMap:
+                    name: php-ini-conf
+                    defaultMode: 0644
+            containers: #list of containers at the Pod
+                - name: php-fpm-container
+                  image: besogon1/php-fpm-dbs:1.0
+                  env: # List of environment variables at container
+                    # - name: XDEBUG_CONFIG
+                    #   value: "idekey=PHPSTORM remote_enable=1 remote_connect_back=1"
+                    - name: XDEBUG_CONFIG
+                      valueFrom:
+                        configMapKeyRef:
+                            name: variables
+                            key: XDEBUG_CONFIG
+                  ports: # list of ports to expose
+                    - containerPort: 9000 # port
+                      name: php-port # port name
+                    - containerPort: 9001 # xdebug port
+                      name: php-xdebug-port # port name
+                  volumeMounts:
+                    - name: project-volume
+                      mountPath: /var/www/html
+                    - name: php-ini-config
+                      mountPath: /usr/local/etc/php/php.ini
+                      subPath: php.ini
+                    - name: php-fpm-config
+                      mountPath: /usr/local/etc/php-fpm.conf
+                      subPath: php-fpm.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: phpserver
+spec:
+    type: ClusterIP
+    selector:
+        app: php-fpm-pod-label
+    ports:
+        - protocol: TCP
+          port: 9000
+          targetPort: php-port
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: phpserver-xdebug
+spec:
+    type: NodePort
+    selector:
+        app: php-fpm-pod-label
+    ports:
+        - protocol: TCP
+          port: 9001
+          targetPort: php-xdebug-port
